@@ -1,0 +1,227 @@
+CREATE TABLE "InsuranceType" (
+    "InsuranceTypeId" SERIAL4 PRIMARY KEY,
+    "InsuranceName" VARCHAR(100) NOT NULL,
+    "DiscountPercent" NUMERIC(5,2) NOT NULL CHECK ("DiscountPercent" BETWEEN 0 AND 100)
+);
+
+CREATE TABLE "Patient" (
+    "PatientId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "Phone" VARCHAR(20) NOT NULL,
+    "Email" VARCHAR(100),
+    "DateOfRegistration" DATE NOT NULL,
+    "InsuranceTypeId" INT REFERENCES "InsuranceType"("InsuranceTypeId") ON DELETE SET NULL
+);
+
+CREATE TABLE "Specialization" (
+    "SpecializationId" SERIAL4 PRIMARY KEY,
+    "SpecializationName" VARCHAR(100) NOT NULL,
+    "ConsultationPrice" NUMERIC(12,2) NOT NULL CHECK ("ConsultationPrice" >= 0)
+);
+
+CREATE TABLE "Doctor" (
+    "DoctorId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "PassportSeries" VARCHAR(10) NOT NULL,
+    "PassportNumber" VARCHAR(10) NOT NULL,
+    "IsActive" BOOLEAN NOT NULL,
+    "PayCoeff" NUMERIC(8,2) NOT NULL CHECK ("PayCoeff" >= 0),
+    "SpecializationId" INT NOT NULL REFERENCES "Specialization"("SpecializationId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Department" (
+    "DepartmentId" SERIAL4 PRIMARY KEY,
+    "DepartmentName" VARCHAR(100) NOT NULL,
+    "FloorNumber" INT NOT NULL CHECK ("FloorNumber" > 0)
+);
+
+CREATE TABLE "MedicalService" (
+    "ServiceId" SERIAL4 PRIMARY KEY,
+    "ServiceName" VARCHAR(200) NOT NULL,
+    "ServiceDescription" TEXT,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "DurationMinutes" INT NOT NULL CHECK ("DurationMinutes" > 0),
+    "MainPhoto" VARCHAR(100) NOT NULL,
+    "DepartmentId" INT NOT NULL REFERENCES "Department"("DepartmentId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Appointment" (
+    "AppointmentId" SERIAL4 PRIMARY KEY,
+    "PatientId" INT NOT NULL REFERENCES "Patient"("PatientId") ON DELETE RESTRICT,
+    "DoctorId" INT NOT NULL REFERENCES "Doctor"("DoctorId") ON DELETE RESTRICT,
+    "ServiceId" INT NOT NULL REFERENCES "MedicalService"("ServiceId") ON DELETE RESTRICT,
+    "AppointmentDate" TIMESTAMP NOT NULL,
+    "ActualDate" TIMESTAMP,
+    "IsPaid" BOOLEAN,
+    "Status" VARCHAR(50) NOT NULL,
+    "DoctorNotes" TEXT
+);
+
+CREATE TABLE "Manufacturer" (
+    "ManufacturerId" SERIAL4 PRIMARY KEY,
+    "ManufacturerName" VARCHAR(200) NOT NULL,
+    "Country" VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE "Medicine" (
+    "MedicineId" SERIAL4 PRIMARY KEY,
+    "MedicineName" VARCHAR(200) NOT NULL,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "IsActive" BOOLEAN NOT NULL,
+    "ManufacturerId" INT NOT NULL REFERENCES "Manufacturer"("ManufacturerId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "PharmacyStock" (
+    "StockId" SERIAL4 PRIMARY KEY,
+    "MedicineId" INT NOT NULL REFERENCES "Medicine"("MedicineId") ON DELETE CASCADE,
+    "Quantity" INT NOT NULL CHECK ("Quantity" >= 0),
+    "ExpirationDate" DATE NOT NULL
+);
+
+CREATE TABLE "Prescription" (
+    "PrescriptionId" SERIAL4 PRIMARY KEY,
+    "AppointmentId" INT NOT NULL REFERENCES "Appointment"("AppointmentId") ON DELETE RESTRICT,
+    "MedicineId" INT NOT NULL REFERENCES "Medicine"("MedicineId") ON DELETE RESTRICT,
+    "Quantity" INT NOT NULL CHECK ("Quantity" >= 0),
+    "SaleDate" TIMESTAMP NOT NULL
+);
+
+INSERT INTO "InsuranceType" ("InsuranceName", "DiscountPercent") VALUES
+    ('Страхование 1', 2.00),
+    ('Страхование 2', 4.00),
+    ('Страхование 3', 6.00),
+    ('Страхование 4', 8.00),
+    ('Страхование 5', 10.00),
+    ('Страхование 6', 12.00),
+    ('Страхование 7', 14.00),
+    ('Страхование 8', 16.00),
+    ('Страхование 9', 18.00),
+    ('Страхование 10', 20.00);
+
+INSERT INTO "Patient" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "Phone", "Email", "DateOfRegistration", "InsuranceTypeId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '+79000000001', 'user1@example.org', '2027-01-01', 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '+79000000002', 'user2@example.org', '2027-02-01', 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '+79000000003', 'user3@example.org', '2027-03-01', 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '+79000000004', 'user4@example.org', '2027-04-01', 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '+79000000005', 'user5@example.org', '2027-05-01', 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '+79000000006', 'user6@example.org', '2027-06-01', 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '+79000000007', 'user7@example.org', '2027-07-01', NULL),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '+79000000008', NULL, '2027-08-01', 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '+79000000009', 'user9@example.org', '2027-09-01', NULL),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '+79000000010', NULL, '2027-10-01', 10);
+
+INSERT INTO "Specialization" ("SpecializationName", "ConsultationPrice") VALUES
+    ('SpecializationName 1', 125.00),
+    ('SpecializationName 2', 150.00),
+    ('SpecializationName 3', 175.00),
+    ('SpecializationName 4', 200.00),
+    ('SpecializationName 5', 225.00),
+    ('SpecializationName 6', 250.00),
+    ('SpecializationName 7', 275.00),
+    ('SpecializationName 8', 300.00),
+    ('SpecializationName 9', 325.00),
+    ('SpecializationName 10', 350.00);
+
+INSERT INTO "Doctor" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "PassportSeries", "PassportNumber", "IsActive", "PayCoeff", "SpecializationId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '4501', '100001', TRUE, 1.10, 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '4501', '100002', FALSE, 1.10, 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '4501', '100003', TRUE, 1.10, 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '4501', '100004', FALSE, 1.10, 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '4501', '100005', TRUE, 1.10, 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '4501', '100006', FALSE, 1.10, 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '4501', '100007', TRUE, 1.10, 7),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '4501', '100008', FALSE, 1.10, 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '4501', '100009', TRUE, 1.10, 9),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '4501', '100010', FALSE, 1.10, 10);
+
+INSERT INTO "Department" ("DepartmentName", "FloorNumber") VALUES
+    ('DepartmentName 1', 1),
+    ('DepartmentName 2', 2),
+    ('DepartmentName 3', 3),
+    ('DepartmentName 4', 4),
+    ('DepartmentName 5', 5),
+    ('DepartmentName 6', 6),
+    ('DepartmentName 7', 7),
+    ('DepartmentName 8', 8),
+    ('DepartmentName 9', 9),
+    ('DepartmentName 10', 10);
+
+INSERT INTO "MedicalService" ("ServiceName", "ServiceDescription", "Price", "DurationMinutes", "MainPhoto", "DepartmentId") VALUES
+    ('ServiceName 1', 'Описание услуги 1', 125.00, 2, 'photo1.jpg', 1),
+    ('ServiceName 2', 'Описание услуги 2', 150.00, 4, 'photo2.jpg', 2),
+    ('ServiceName 3', 'Описание услуги 3', 175.00, 6, 'photo3.jpg', 3),
+    ('ServiceName 4', 'Описание услуги 4', 200.00, 8, 'photo4.jpg', 4),
+    ('ServiceName 5', 'Описание услуги 5', 225.00, 10, 'photo5.jpg', 5),
+    ('ServiceName 6', 'Описание услуги 6', 250.00, 12, 'photo6.jpg', 6),
+    ('ServiceName 7', 'Описание услуги 7', 275.00, 14, 'photo7.jpg', 7),
+    ('ServiceName 8', NULL, 300.00, 16, 'photo8.jpg', 8),
+    ('ServiceName 9', 'Описание услуги 9', 325.00, 18, 'photo9.jpg', 9),
+    ('ServiceName 10', NULL, 350.00, 20, 'photo10.jpg', 10);
+
+INSERT INTO "Appointment" ("PatientId", "DoctorId", "ServiceId", "AppointmentDate", "ActualDate", "IsPaid", "Status", "DoctorNotes") VALUES
+    (1, 1, 1, '2027-01-12 10:30:00', '2027-01-12 10:30:00', TRUE, 'Запланирован', 'Заключение 1'),
+    (2, 2, 2, '2027-02-12 10:30:00', '2027-02-12 10:30:00', FALSE, 'Завершен', 'Заключение 2'),
+    (3, 3, 3, '2027-03-12 10:30:00', '2027-03-12 10:30:00', TRUE, 'Запланирован', 'Заключение 3'),
+    (4, 4, 4, '2027-04-12 10:30:00', '2027-04-12 10:30:00', FALSE, 'Завершен', 'Заключение 4'),
+    (5, 5, 5, '2027-05-12 10:30:00', '2027-05-12 10:30:00', TRUE, 'Запланирован', 'Заключение 5'),
+    (6, 6, 6, '2027-06-12 10:30:00', '2027-06-12 10:30:00', FALSE, 'Завершен', 'Заключение 6'),
+    (7, 7, 7, '2027-07-12 10:30:00', '2027-07-12 10:30:00', TRUE, 'Запланирован', 'Заключение 7'),
+    (8, 8, 8, '2027-08-12 10:30:00', NULL, NULL, 'Завершен', NULL),
+    (9, 9, 9, '2027-09-12 10:30:00', '2027-09-12 10:30:00', TRUE, 'Запланирован', 'Заключение 9'),
+    (10, 10, 10, '2027-10-12 10:30:00', NULL, NULL, 'Завершен', NULL);
+
+INSERT INTO "Manufacturer" ("ManufacturerName", "Country") VALUES
+    ('ManufacturerName 1', 'Россия'),
+    ('ManufacturerName 2', 'Россия'),
+    ('ManufacturerName 3', 'Россия'),
+    ('ManufacturerName 4', 'Россия'),
+    ('ManufacturerName 5', 'Россия'),
+    ('ManufacturerName 6', 'Россия'),
+    ('ManufacturerName 7', 'Россия'),
+    ('ManufacturerName 8', 'Россия'),
+    ('ManufacturerName 9', 'Россия'),
+    ('ManufacturerName 10', 'Россия');
+
+INSERT INTO "Medicine" ("MedicineName", "Price", "IsActive", "ManufacturerId") VALUES
+    ('MedicineName 1', 125.00, TRUE, 1),
+    ('MedicineName 2', 150.00, FALSE, 2),
+    ('MedicineName 3', 175.00, TRUE, 3),
+    ('MedicineName 4', 200.00, FALSE, 4),
+    ('MedicineName 5', 225.00, TRUE, 5),
+    ('MedicineName 6', 250.00, FALSE, 6),
+    ('MedicineName 7', 275.00, TRUE, 7),
+    ('MedicineName 8', 300.00, FALSE, 8),
+    ('MedicineName 9', 325.00, TRUE, 9),
+    ('MedicineName 10', 350.00, FALSE, 10);
+
+INSERT INTO "PharmacyStock" ("MedicineId", "Quantity", "ExpirationDate") VALUES
+    (1, 2, '2028-01-20'),
+    (2, 4, '2028-02-20'),
+    (3, 6, '2028-03-20'),
+    (4, 8, '2028-04-20'),
+    (5, 10, '2028-05-20'),
+    (6, 12, '2028-06-20'),
+    (7, 14, '2028-07-20'),
+    (8, 16, '2028-08-20'),
+    (9, 18, '2028-09-20'),
+    (10, 20, '2028-10-20');
+
+INSERT INTO "Prescription" ("AppointmentId", "MedicineId", "Quantity", "SaleDate") VALUES
+    (1, 1, 2, '2027-01-12 10:30:00'),
+    (2, 2, 4, '2027-02-12 10:30:00'),
+    (3, 3, 6, '2027-03-12 10:30:00'),
+    (4, 4, 8, '2027-04-12 10:30:00'),
+    (5, 5, 10, '2027-05-12 10:30:00'),
+    (6, 6, 12, '2027-06-12 10:30:00'),
+    (7, 7, 14, '2027-07-12 10:30:00'),
+    (8, 8, 16, '2027-08-12 10:30:00'),
+    (9, 9, 18, '2027-09-12 10:30:00'),
+    (10, 10, 20, '2027-10-12 10:30:00');

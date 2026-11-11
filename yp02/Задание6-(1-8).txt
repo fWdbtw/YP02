@@ -1,0 +1,338 @@
+CREATE TABLE "ClientType" (
+    "ClientTypeId" SERIAL4 PRIMARY KEY,
+    "ClientTypeName" VARCHAR(50) NOT NULL,
+    "DiscountPercent" NUMERIC(5,2) NOT NULL CHECK ("DiscountPercent" BETWEEN 0 AND 100)
+);
+
+CREATE TABLE "Client" (
+    "ClientId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "Phone" VARCHAR(20) NOT NULL,
+    "Email" VARCHAR(100) NOT NULL,
+    "Address" VARCHAR(200),
+    "DateOfRegistration" DATE NOT NULL,
+    "ClientTypeId" INT REFERENCES "ClientType"("ClientTypeId") ON DELETE SET NULL
+);
+
+CREATE TABLE "Car" (
+    "CarId" SERIAL4 PRIMARY KEY,
+    "ClientId" INT NOT NULL REFERENCES "Client"("ClientId") ON DELETE RESTRICT,
+    "Brand" VARCHAR(50) NOT NULL,
+    "Model" VARCHAR(50) NOT NULL,
+    "Year" INT NOT NULL,
+    "VIN" VARCHAR(17) NOT NULL CHECK (char_length("VIN") = 17),
+    "LicensePlate" VARCHAR(20) NOT NULL,
+    "Color" VARCHAR(30),
+    "Mileage" INT CHECK ("Mileage" >= 0)
+);
+
+CREATE TABLE "Speciality" (
+    "SpecialityId" SERIAL4 PRIMARY KEY,
+    "SpecialityName" VARCHAR(50) NOT NULL,
+    "HourlyRate" NUMERIC(12,2) NOT NULL CHECK ("HourlyRate" >= 0)
+);
+
+CREATE TABLE "Worker" (
+    "WorkerId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "PassportSeries" VARCHAR(10) NOT NULL,
+    "PassportNumber" VARCHAR(10) NOT NULL,
+    "PassportCode" VARCHAR(10) NOT NULL,
+    "Phone" VARCHAR(20) NOT NULL,
+    "IsActive" BOOLEAN NOT NULL,
+    "PayCoeff" NUMERIC(8,2) NOT NULL CHECK ("PayCoeff" >= 0),
+    "SpecialityId" INT NOT NULL REFERENCES "Speciality"("SpecialityId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Developer" (
+    "DeveloperId" SERIAL4 PRIMARY KEY,
+    "DeveloperName" VARCHAR(200) NOT NULL,
+    "Country" VARCHAR(100),
+    "ContactPhone" VARCHAR(20)
+);
+
+CREATE TABLE "Category" (
+    "CategoryId" SERIAL4 PRIMARY KEY,
+    "CategoryName" VARCHAR(100) NOT NULL,
+    "ParentCategoryId" INT REFERENCES "Category"("CategoryId") ON DELETE SET NULL,
+    CHECK ("ParentCategoryId" IS DISTINCT FROM "CategoryId")
+);
+
+CREATE TABLE "Good" (
+    "GoodId" SERIAL4 PRIMARY KEY,
+    "GoodName" VARCHAR(200) NOT NULL,
+    "ArticleNumber" VARCHAR(50) NOT NULL,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "Weight" NUMERIC(10,2) CHECK ("Weight" >= 0),
+    "IsActive" BOOLEAN NOT NULL,
+    "DeveloperId" INT NOT NULL REFERENCES "Developer"("DeveloperId") ON DELETE RESTRICT,
+    "CategoryId" INT REFERENCES "Category"("CategoryId") ON DELETE SET NULL
+);
+
+CREATE TABLE "Store" (
+    "StoreId" SERIAL4 PRIMARY KEY,
+    "GoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE CASCADE,
+    "Quantity" INT NOT NULL CHECK ("Quantity" >= 0),
+    "MinQuantity" INT NOT NULL CHECK ("MinQuantity" >= 0)
+);
+
+CREATE TABLE "Service" (
+    "ServiceId" SERIAL4 PRIMARY KEY,
+    "ServiceName" VARCHAR(200) NOT NULL,
+    "ServiceDescription" TEXT,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "TimeLength" INT NOT NULL CHECK ("TimeLength" > 0),
+    "IsActive" BOOLEAN NOT NULL
+);
+
+CREATE TABLE "TimeSheet" (
+    "TimeSheetId" SERIAL4 PRIMARY KEY,
+    "WorkerId" INT NOT NULL REFERENCES "Worker"("WorkerId") ON DELETE RESTRICT,
+    "ServiceId" INT NOT NULL REFERENCES "Service"("ServiceId") ON DELETE RESTRICT,
+    "WorkDate" DATE NOT NULL,
+    "StartTime" TIME NOT NULL,
+    "EndTime" TIME NOT NULL CHECK ("EndTime" > "StartTime")
+);
+
+CREATE TABLE "Visit" (
+    "VisitId" SERIAL4 PRIMARY KEY,
+    "ClientId" INT NOT NULL REFERENCES "Client"("ClientId") ON DELETE RESTRICT,
+    "CarId" INT NOT NULL REFERENCES "Car"("CarId") ON DELETE RESTRICT,
+    "ServiceId" INT NOT NULL REFERENCES "Service"("ServiceId") ON DELETE RESTRICT,
+    "WorkerId" INT NOT NULL REFERENCES "Worker"("WorkerId") ON DELETE RESTRICT,
+    "DateCreated" TIMESTAMP NOT NULL,
+    "DateActual" TIMESTAMP,
+    "Status" VARCHAR(50) NOT NULL,
+    "IsPaid" BOOLEAN NOT NULL,
+    "TotalAmount" NUMERIC(12,2) NOT NULL CHECK ("TotalAmount" >= 0),
+    "Notes" TEXT
+);
+
+CREATE TABLE "Sell" (
+    "SellId" SERIAL4 PRIMARY KEY,
+    "GoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE RESTRICT,
+    "Quantity" INT NOT NULL CHECK ("Quantity" >= 0),
+    "DateSell" TIMESTAMP NOT NULL,
+    "TotalPrice" NUMERIC(12,2) NOT NULL CHECK ("TotalPrice" >= 0)
+);
+
+CREATE TABLE "SellVisit" (
+    "SellVisitId" SERIAL4 PRIMARY KEY,
+    "SellId" INT NOT NULL REFERENCES "Sell"("SellId") ON DELETE CASCADE,
+    "VisitId" INT NOT NULL REFERENCES "Visit"("VisitId") ON DELETE CASCADE,
+    UNIQUE ("SellId", "VisitId")
+);
+
+CREATE TABLE "Season" (
+    "SeasonId" SERIAL4 PRIMARY KEY,
+    "SeasonName" VARCHAR(50) NOT NULL,
+    "StartDate" DATE NOT NULL,
+    "EndDate" DATE NOT NULL CHECK ("EndDate" >= "StartDate")
+);
+
+CREATE TABLE "SeasonService" (
+    "SeasonServiceId" SERIAL4 PRIMARY KEY,
+    "SeasonId" INT NOT NULL REFERENCES "Season"("SeasonId") ON DELETE CASCADE,
+    "ServiceId" INT NOT NULL REFERENCES "Service"("ServiceId") ON DELETE CASCADE,
+    UNIQUE ("SeasonId", "ServiceId")
+);
+
+INSERT INTO "ClientType" ("ClientTypeName", "DiscountPercent") VALUES
+    ('ClientTypeName 1', 2.00),
+    ('ClientTypeName 2', 4.00),
+    ('ClientTypeName 3', 6.00),
+    ('ClientTypeName 4', 8.00),
+    ('ClientTypeName 5', 10.00),
+    ('ClientTypeName 6', 12.00),
+    ('ClientTypeName 7', 14.00),
+    ('ClientTypeName 8', 16.00),
+    ('ClientTypeName 9', 18.00),
+    ('ClientTypeName 10', 20.00);
+
+INSERT INTO "Client" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "Phone", "Email", "Address", "DateOfRegistration", "ClientTypeId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '+79000000001', 'user1@example.org', 'Улица Примерная, 1', '2027-01-01', 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '+79000000002', 'user2@example.org', 'Улица Примерная, 2', '2027-02-01', 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '+79000000003', 'user3@example.org', 'Улица Примерная, 3', '2027-03-01', 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '+79000000004', 'user4@example.org', 'Улица Примерная, 4', '2027-04-01', 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '+79000000005', 'user5@example.org', 'Улица Примерная, 5', '2027-05-01', 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '+79000000006', 'user6@example.org', 'Улица Примерная, 6', '2027-06-01', 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '+79000000007', 'user7@example.org', 'Улица Примерная, 7', '2027-07-01', NULL),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '+79000000008', 'user8@example.org', NULL, '2027-08-01', 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '+79000000009', 'user9@example.org', 'Улица Примерная, 9', '2027-09-01', NULL),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '+79000000010', 'user10@example.org', NULL, '2027-10-01', 10);
+
+INSERT INTO "Car" ("ClientId", "Brand", "Model", "Year", "VIN", "LicensePlate", "Color", "Mileage") VALUES
+    (1, 'Toyota', 'Corolla', 2011, 'WVWZZZ1JZXW000001', 'A001AA77', 'Синий', 2),
+    (2, 'Toyota', 'Corolla', 2012, 'WVWZZZ1JZXW000002', 'A002AA77', 'Синий', 4),
+    (3, 'Toyota', 'Corolla', 2013, 'WVWZZZ1JZXW000003', 'A003AA77', 'Синий', 6),
+    (4, 'Toyota', 'Corolla', 2014, 'WVWZZZ1JZXW000004', 'A004AA77', 'Синий', 8),
+    (5, 'Toyota', 'Corolla', 2015, 'WVWZZZ1JZXW000005', 'A005AA77', 'Синий', 10),
+    (6, 'Toyota', 'Corolla', 2016, 'WVWZZZ1JZXW000006', 'A006AA77', 'Синий', 12),
+    (7, 'Toyota', 'Corolla', 2017, 'WVWZZZ1JZXW000007', 'A007AA77', 'Синий', 14),
+    (8, 'Toyota', 'Corolla', 2018, 'WVWZZZ1JZXW000008', 'A008AA77', NULL, NULL),
+    (9, 'Toyota', 'Corolla', 2019, 'WVWZZZ1JZXW000009', 'A009AA77', 'Синий', 18),
+    (10, 'Toyota', 'Corolla', 2020, 'WVWZZZ1JZXW000010', 'A010AA77', NULL, NULL);
+
+INSERT INTO "Speciality" ("SpecialityName", "HourlyRate") VALUES
+    ('SpecialityName 1', 125.00),
+    ('SpecialityName 2', 150.00),
+    ('SpecialityName 3', 175.00),
+    ('SpecialityName 4', 200.00),
+    ('SpecialityName 5', 225.00),
+    ('SpecialityName 6', 250.00),
+    ('SpecialityName 7', 275.00),
+    ('SpecialityName 8', 300.00),
+    ('SpecialityName 9', 325.00),
+    ('SpecialityName 10', 350.00);
+
+INSERT INTO "Worker" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "PassportSeries", "PassportNumber", "PassportCode", "Phone", "IsActive", "PayCoeff", "SpecialityId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '4501', '100001', '770001', '+79000000001', TRUE, 1.10, 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '4501', '100002', '770001', '+79000000002', FALSE, 1.10, 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '4501', '100003', '770001', '+79000000003', TRUE, 1.10, 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '4501', '100004', '770001', '+79000000004', FALSE, 1.10, 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '4501', '100005', '770001', '+79000000005', TRUE, 1.10, 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '4501', '100006', '770001', '+79000000006', FALSE, 1.10, 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '4501', '100007', '770001', '+79000000007', TRUE, 1.10, 7),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '4501', '100008', '770001', '+79000000008', FALSE, 1.10, 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '4501', '100009', '770001', '+79000000009', TRUE, 1.10, 9),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '4501', '100010', '770001', '+79000000010', FALSE, 1.10, 10);
+
+INSERT INTO "Developer" ("DeveloperName", "Country", "ContactPhone") VALUES
+    ('DeveloperName 1', 'Россия', '+79000000001'),
+    ('DeveloperName 2', 'Россия', '+79000000002'),
+    ('DeveloperName 3', 'Россия', '+79000000003'),
+    ('DeveloperName 4', 'Россия', '+79000000004'),
+    ('DeveloperName 5', 'Россия', '+79000000005'),
+    ('DeveloperName 6', 'Россия', '+79000000006'),
+    ('DeveloperName 7', 'Россия', '+79000000007'),
+    ('DeveloperName 8', NULL, NULL),
+    ('DeveloperName 9', 'Россия', '+79000000009'),
+    ('DeveloperName 10', NULL, NULL);
+
+INSERT INTO "Category" ("CategoryName", "ParentCategoryId") VALUES
+    ('CategoryName 1', NULL),
+    ('CategoryName 2', 1),
+    ('CategoryName 3', 1),
+    ('CategoryName 4', 1),
+    ('CategoryName 5', 2),
+    ('CategoryName 6', 2),
+    ('CategoryName 7', NULL),
+    ('CategoryName 8', 3),
+    ('CategoryName 9', NULL),
+    ('CategoryName 10', 3);
+
+INSERT INTO "Good" ("GoodName", "ArticleNumber", "Price", "Weight", "IsActive", "DeveloperId", "CategoryId") VALUES
+    ('GoodName 1', 'ART-0001', 125.00, 2.50, TRUE, 1, 1),
+    ('GoodName 2', 'ART-0002', 150.00, 4.50, FALSE, 2, 2),
+    ('GoodName 3', 'ART-0003', 175.00, 6.50, TRUE, 3, 3),
+    ('GoodName 4', 'ART-0004', 200.00, 8.50, FALSE, 4, 4),
+    ('GoodName 5', 'ART-0005', 225.00, 10.50, TRUE, 5, 5),
+    ('GoodName 6', 'ART-0006', 250.00, 12.50, FALSE, 6, 6),
+    ('GoodName 7', 'ART-0007', 275.00, 14.50, TRUE, 7, NULL),
+    ('GoodName 8', 'ART-0008', 300.00, NULL, FALSE, 8, 8),
+    ('GoodName 9', 'ART-0009', 325.00, 18.50, TRUE, 9, NULL),
+    ('GoodName 10', 'ART-0010', 350.00, NULL, FALSE, 10, 10);
+
+INSERT INTO "Store" ("GoodId", "Quantity", "MinQuantity") VALUES
+    (1, 2, 2),
+    (2, 4, 4),
+    (3, 6, 6),
+    (4, 8, 8),
+    (5, 10, 10),
+    (6, 12, 12),
+    (7, 14, 14),
+    (8, 16, 16),
+    (9, 18, 18),
+    (10, 20, 20);
+
+INSERT INTO "Service" ("ServiceName", "ServiceDescription", "Price", "TimeLength", "IsActive") VALUES
+    ('ServiceName 1', 'Описание услуги 1', 125.00, 2, TRUE),
+    ('ServiceName 2', 'Описание услуги 2', 150.00, 4, FALSE),
+    ('ServiceName 3', 'Описание услуги 3', 175.00, 6, TRUE),
+    ('ServiceName 4', 'Описание услуги 4', 200.00, 8, FALSE),
+    ('ServiceName 5', 'Описание услуги 5', 225.00, 10, TRUE),
+    ('ServiceName 6', 'Описание услуги 6', 250.00, 12, FALSE),
+    ('ServiceName 7', 'Описание услуги 7', 275.00, 14, TRUE),
+    ('ServiceName 8', NULL, 300.00, 16, FALSE),
+    ('ServiceName 9', 'Описание услуги 9', 325.00, 18, TRUE),
+    ('ServiceName 10', NULL, 350.00, 20, FALSE);
+
+INSERT INTO "TimeSheet" ("WorkerId", "ServiceId", "WorkDate", "StartTime", "EndTime") VALUES
+    (1, 1, '2027-01-01', '09:00:00', '09:00:00'),
+    (2, 2, '2027-02-01', '10:00:00', '10:00:00'),
+    (3, 3, '2027-03-01', '11:00:00', '11:00:00'),
+    (4, 4, '2027-04-01', '12:00:00', '12:00:00'),
+    (5, 5, '2027-05-01', '13:00:00', '13:00:00'),
+    (6, 6, '2027-06-01', '14:00:00', '14:00:00'),
+    (7, 7, '2027-07-01', '15:00:00', '15:00:00'),
+    (8, 8, '2027-08-01', '16:00:00', '16:00:00'),
+    (9, 9, '2027-09-01', '17:00:00', '17:00:00'),
+    (10, 10, '2027-10-01', '18:00:00', '18:00:00');
+
+INSERT INTO "Visit" ("ClientId", "CarId", "ServiceId", "WorkerId", "DateCreated", "DateActual", "Status", "IsPaid", "TotalAmount", "Notes") VALUES
+    (1, 1, 1, 1, '2027-01-12 10:30:00', '2027-01-12 10:30:00', 'Создан', TRUE, 125.00, 'Комментарий 1'),
+    (2, 2, 2, 2, '2027-02-12 10:30:00', '2027-02-12 10:30:00', 'Завершен', FALSE, 150.00, 'Комментарий 2'),
+    (3, 3, 3, 3, '2027-03-12 10:30:00', '2027-03-12 10:30:00', 'Создан', TRUE, 175.00, 'Комментарий 3'),
+    (4, 4, 4, 4, '2027-04-12 10:30:00', '2027-04-12 10:30:00', 'Завершен', FALSE, 200.00, 'Комментарий 4'),
+    (5, 5, 5, 5, '2027-05-12 10:30:00', '2027-05-12 10:30:00', 'Создан', TRUE, 225.00, 'Комментарий 5'),
+    (6, 6, 6, 6, '2027-06-12 10:30:00', '2027-06-12 10:30:00', 'Завершен', FALSE, 250.00, 'Комментарий 6'),
+    (7, 7, 7, 7, '2027-07-12 10:30:00', '2027-07-12 10:30:00', 'Создан', TRUE, 275.00, 'Комментарий 7'),
+    (8, 8, 8, 8, '2027-08-12 10:30:00', NULL, 'Завершен', FALSE, 300.00, NULL),
+    (9, 9, 9, 9, '2027-09-12 10:30:00', '2027-09-12 10:30:00', 'Создан', TRUE, 325.00, 'Комментарий 9'),
+    (10, 10, 10, 10, '2027-10-12 10:30:00', NULL, 'Завершен', FALSE, 350.00, NULL);
+
+INSERT INTO "Sell" ("GoodId", "Quantity", "DateSell", "TotalPrice") VALUES
+    (1, 2, '2027-01-12 10:30:00', 125.00),
+    (2, 4, '2027-02-12 10:30:00', 150.00),
+    (3, 6, '2027-03-12 10:30:00', 175.00),
+    (4, 8, '2027-04-12 10:30:00', 200.00),
+    (5, 10, '2027-05-12 10:30:00', 225.00),
+    (6, 12, '2027-06-12 10:30:00', 250.00),
+    (7, 14, '2027-07-12 10:30:00', 275.00),
+    (8, 16, '2027-08-12 10:30:00', 300.00),
+    (9, 18, '2027-09-12 10:30:00', 325.00),
+    (10, 20, '2027-10-12 10:30:00', 350.00);
+
+INSERT INTO "SellVisit" ("SellId", "VisitId") VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (5, 5),
+    (6, 6),
+    (7, 7),
+    (8, 8),
+    (9, 9),
+    (10, 10);
+
+INSERT INTO "Season" ("SeasonName", "StartDate", "EndDate") VALUES
+    ('Сезон 1', '2027-01-01', '2027-01-28'),
+    ('Сезон 2', '2027-02-01', '2027-02-28'),
+    ('Сезон 3', '2027-03-01', '2027-03-28'),
+    ('Сезон 4', '2027-04-01', '2027-04-28'),
+    ('Сезон 5', '2027-05-01', '2027-05-28'),
+    ('Сезон 6', '2027-06-01', '2027-06-28'),
+    ('Сезон 7', '2027-07-01', '2027-07-28'),
+    ('Сезон 8', '2027-08-01', '2027-08-28'),
+    ('Сезон 9', '2027-09-01', '2027-09-28'),
+    ('Сезон 10', '2027-10-01', '2027-10-28');
+
+INSERT INTO "SeasonService" ("SeasonId", "ServiceId") VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (5, 5),
+    (6, 6),
+    (7, 7),
+    (8, 8),
+    (9, 9),
+    (10, 10);

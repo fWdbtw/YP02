@@ -1,0 +1,224 @@
+
+CREATE TABLE "AgentType" (
+    "AgentTypeId" SERIAL4 PRIMARY KEY,
+    "AgentTypeName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "Door" (
+    "DoorId" SERIAL4 PRIMARY KEY,
+    "DoorPlace" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "MaterialType" (
+    "MaterialTypeId" SERIAL4 PRIMARY KEY,
+    "MaterialTypeName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "OperationType" (
+    "OperationTypeId" SERIAL4 PRIMARY KEY,
+    "OperationTypeName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "ProductType" (
+    "ProductTypeId" SERIAL4 PRIMARY KEY,
+    "ProductTypeName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "Speciality" (
+    "SpecialityId" SERIAL4 PRIMARY KEY,
+    "SpecialityName" VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE "SupplierType" (
+    "SupplierTypeId" SERIAL4 PRIMARY KEY,
+    "SupplierTypeName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "UnitType" (
+    "UnitTypeId" SERIAL4 PRIMARY KEY,
+    "UnitTypeName" VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE "Workshop" (
+    "WorkshopId" SERIAL4 PRIMARY KEY,
+    "WorkshopName" VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE "Agent" (
+    "AgentId" SERIAL4 PRIMARY KEY,
+    "AgentName" VARCHAR(100) NOT NULL,
+    "LegalAddress" VARCHAR(300) NOT NULL,
+    "INN" VARCHAR(12) NOT NULL,
+    "KPP" VARCHAR(9) NOT NULL,
+    "ManagerFIO" VARCHAR(100) NOT NULL,
+    "Phone" VARCHAR(20) NOT NULL,
+    "Email" VARCHAR(100) NOT NULL,
+    "Logo" VARCHAR(150),
+    "Priority" SMALLINT NOT NULL,
+    "AgentTypeId" INT NOT NULL REFERENCES "AgentType"("AgentTypeId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Material" (
+    "MaterialId" SERIAL4 PRIMARY KEY,
+    "MaterialName" VARCHAR(100) NOT NULL,
+    "CountInPack" NUMERIC(10,3) NOT NULL CHECK ("CountInPack" >= 0),
+    "UnitTypeId" INT NOT NULL REFERENCES "UnitType"("UnitTypeId") ON DELETE RESTRICT,
+    "MinimalCount" INT NOT NULL CHECK ("MinimalCount" >= 0),
+    "Description" TEXT,
+    "Image" VARCHAR(150),
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "MaterialTypeId" INT NOT NULL REFERENCES "MaterialType"("MaterialTypeId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Product" (
+    "ProductId" SERIAL4 PRIMARY KEY,
+    "Artikul" VARCHAR(50) NOT NULL,
+    "ProductName" VARCHAR(200) NOT NULL,
+    "Description" TEXT,
+    "Image" VARCHAR(150),
+    "Width" NUMERIC(12,3),
+    "Height" NUMERIC(12,3),
+    "Length" NUMERIC(12,3),
+    "Netto" NUMERIC(12,3),
+    "Brutto" NUMERIC(12,3),
+    "Certificate" VARCHAR(150),
+    "StandartNum" VARCHAR(100),
+    "PeopleCount" INT NOT NULL CHECK ("PeopleCount" >= 0),
+    "ProductionTime" INT,
+    "MinimalPrice" NUMERIC(12,2) NOT NULL CHECK ("MinimalPrice" >= 0),
+    "WorkshopId" INT NOT NULL REFERENCES "Workshop"("WorkshopId") ON DELETE RESTRICT,
+    "ProductTypeId" INT NOT NULL REFERENCES "ProductType"("ProductTypeId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Supplier" (
+    "SupplierId" SERIAL4 PRIMARY KEY,
+    "SupplierName" VARCHAR(150) NOT NULL,
+    "INN" VARCHAR(12) NOT NULL,
+    "SupplierTypeId" INT NOT NULL REFERENCES "SupplierType"("SupplierTypeId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Worker" (
+    "WorkerId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F', 'M')),
+    "PassportSeries" VARCHAR(10) NOT NULL,
+    "PassportNumber" VARCHAR(10) NOT NULL,
+    "PassportInfo" TEXT NOT NULL,
+    "BankAccount" VARCHAR(34),
+    "FamilyInfo" TEXT NOT NULL,
+    "HealthyInfo" TEXT NOT NULL,
+    "SpecialityId" INT NOT NULL REFERENCES "Speciality"("SpecialityId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "AgentPoint" (
+    "PointId" SERIAL4 PRIMARY KEY,
+    "PointName" VARCHAR(200) NOT NULL,
+    "Address" VARCHAR(300) NOT NULL,
+    "AgentId" INT NOT NULL REFERENCES "Agent"("AgentId") ON DELETE CASCADE
+);
+
+CREATE TABLE "MaterialSupplier" (
+    "MaterialSupplierId" SERIAL4 PRIMARY KEY,
+    "MaterialId" INT NOT NULL REFERENCES "Material"("MaterialId") ON DELETE RESTRICT,
+    "SupplierId" INT NOT NULL REFERENCES "Supplier"("SupplierId") ON DELETE RESTRICT,
+    "Quality" INT NOT NULL,
+    "DeliveryDate" TIMESTAMP NOT NULL,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+CREATE TABLE "MaterialWarehouse" (
+    "MaterialWarehouseId" SERIAL4 PRIMARY KEY,
+    "MaterialId" INT NOT NULL REFERENCES "Material"("MaterialId") ON DELETE RESTRICT,
+    "OperationTypeId" INT NOT NULL REFERENCES "OperationType"("OperationTypeId") ON DELETE RESTRICT,
+    "OperationDate" TIMESTAMP NOT NULL,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+CREATE TABLE "Order" (
+    "OrderId" SERIAL4 PRIMARY KEY,
+    "DateOfFormation" TIMESTAMP NOT NULL,
+    "DateOfPrepayment" TIMESTAMP,
+    "IsActive" BOOLEAN,
+    "DateOfPayment" TIMESTAMP,
+    "AgentId" INT NOT NULL REFERENCES "Agent"("AgentId") ON DELETE RESTRICT,
+    "SellDate" TIMESTAMP
+);
+
+CREATE TABLE "PriceHistory" (
+    "PriceHistoryId" SERIAL4 PRIMARY KEY,
+    "ProductId" INT NOT NULL REFERENCES "Product"("ProductId") ON DELETE RESTRICT,
+    "MinimalPrice" NUMERIC(12,2) NOT NULL CHECK ("MinimalPrice" >= 0),
+    "AcceptanceDate" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "PriorityHistory" (
+    "PriorityHistoryId" SERIAL4 PRIMARY KEY,
+    "AgentId" INT NOT NULL REFERENCES "Agent"("AgentId") ON DELETE RESTRICT,
+    "Priority" SMALLINT NOT NULL,
+    "Date" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "ProductMaterials" (
+    "ProductMaterialId" SERIAL4 PRIMARY KEY,
+    "ProductId" INT NOT NULL REFERENCES "Product"("ProductId") ON DELETE CASCADE,
+    "MaterialId" INT NOT NULL REFERENCES "Material"("MaterialId") ON DELETE CASCADE,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+CREATE TABLE "SellHistory" (
+    "SellHistoryId" SERIAL4 PRIMARY KEY,
+    "AgentId" INT NOT NULL REFERENCES "Agent"("AgentId") ON DELETE RESTRICT,
+    "ProductId" INT NOT NULL REFERENCES "Product"("ProductId") ON DELETE RESTRICT,
+    "Date" TIMESTAMP NOT NULL,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+CREATE TABLE "WorkerDoor" (
+    "WorkerDoorId" SERIAL4 PRIMARY KEY,
+    "DoorId" INT REFERENCES "Door"("DoorId") ON DELETE CASCADE,
+    "WorkerId" INT REFERENCES "Worker"("WorkerId") ON DELETE CASCADE,
+    "DateTime" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "WorkerWorkshop" (
+    "WorkerWorkshopId" SERIAL4 PRIMARY KEY,
+    "WorkerId" INT NOT NULL REFERENCES "Worker"("WorkerId") ON DELETE CASCADE,
+    "WorkshopId" INT NOT NULL REFERENCES "Workshop"("WorkshopId") ON DELETE CASCADE,
+    "WorkShift" INT NOT NULL
+);
+
+CREATE TABLE "OrderProduct" (
+    "OrderProductId" SERIAL4 PRIMARY KEY,
+    "OrderId" INT NOT NULL REFERENCES "Order"("OrderId") ON DELETE CASCADE,
+    "ProductId" INT NOT NULL REFERENCES "Product"("ProductId") ON DELETE RESTRICT,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+INSERT INTO "AgentType" ("AgentTypeName") SELECT ('AgentTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Door" ("DoorPlace") SELECT ('DoorPlace ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "MaterialType" ("MaterialTypeName") SELECT ('MaterialTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "OperationType" ("OperationTypeName") SELECT ('OperationTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "ProductType" ("ProductTypeName") SELECT ('ProductTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Speciality" ("SpecialityName") SELECT ('SpecialityName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "SupplierType" ("SupplierTypeName") SELECT ('SupplierTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "UnitType" ("UnitTypeName") SELECT ('UnitTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Workshop" ("WorkshopName") SELECT ('WorkshopName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Agent" ("AgentName", "LegalAddress", "INN", "KPP", "ManagerFIO", "Phone", "Email", "Logo", "Priority", "AgentTypeId") SELECT ('AgentName ' || g), ('LegalAddress ' || g), LPAD(g::text, 10, '0'), LPAD(g::text, 9, '0'), ('ManagerFIO ' || g), ('+790000000' || LPAD(g::text, 2, '0')), ('person' || g || '@example.org'), ('Logo ' || g), g, g FROM generate_series(1,10) AS g;
+INSERT INTO "Material" ("MaterialName", "CountInPack", "UnitTypeId", "MinimalCount", "Description", "Image", "Price", "MaterialTypeId") SELECT ('MaterialName ' || g), (g * 10.25), g, g, ('Description ' || g), ('Image ' || g), (g * 10.25), g FROM generate_series(1,10) AS g;
+INSERT INTO "Product" ("Artikul", "ProductName", "Description", "Image", "Width", "Height", "Length", "Netto", "Brutto", "Certificate", "StandartNum", "PeopleCount", "ProductionTime", "MinimalPrice", "WorkshopId", "ProductTypeId") SELECT ('Artikul ' || g), ('ProductName ' || g), ('Description ' || g), ('Image ' || g), (g * 10.25), (g * 10.25), (g * 10.25), (g * 10.25), (g * 10.25), ('Certificate ' || g), ('StandartNum ' || g), g, g, (g * 10.25), g, g FROM generate_series(1,10) AS g;
+INSERT INTO "Supplier" ("SupplierName", "INN", "SupplierTypeId") SELECT ('SupplierName ' || g), LPAD(g::text, 10, '0'), g FROM generate_series(1,10) AS g;
+INSERT INTO "Worker" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "PassportSeries", "PassportNumber", "PassportInfo", "BankAccount", "FamilyInfo", "HealthyInfo", "SpecialityId") SELECT ('LastName ' || g), ('FirstName ' || g), ('MiddleName ' || g), (DATE '2025-01-01' + g), CASE WHEN g % 2 = 0 THEN 'F' ELSE 'M' END, '4500', LPAD(g::text, 6, '0'), ('PassportInfo ' || g), LPAD(g::text, 20, '0'), ('FamilyInfo ' || g), ('HealthyInfo ' || g), g FROM generate_series(1,10) AS g;
+INSERT INTO "AgentPoint" ("PointName", "Address", "AgentId") SELECT ('PointName ' || g), ('Address ' || g), g FROM generate_series(1,10) AS g;
+INSERT INTO "MaterialSupplier" ("MaterialId", "SupplierId", "Quality", "DeliveryDate", "Count") SELECT g, g, g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), g FROM generate_series(1,10) AS g;
+INSERT INTO "MaterialWarehouse" ("MaterialId", "OperationTypeId", "OperationDate", "Count") SELECT g, g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), g FROM generate_series(1,10) AS g;
+INSERT INTO "Order" ("DateOfFormation", "DateOfPrepayment", "IsActive", "DateOfPayment", "AgentId", "SellDate") SELECT (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), (g % 2 = 0), (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day') FROM generate_series(1,10) AS g;
+INSERT INTO "PriceHistory" ("ProductId", "MinimalPrice", "AcceptanceDate") SELECT g, (g * 10.25), (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day') FROM generate_series(1,10) AS g;
+INSERT INTO "PriorityHistory" ("AgentId", "Priority", "Date") SELECT g, g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day') FROM generate_series(1,10) AS g;
+INSERT INTO "ProductMaterials" ("ProductId", "MaterialId", "Count") SELECT g, g, g FROM generate_series(1,10) AS g;
+INSERT INTO "SellHistory" ("AgentId", "ProductId", "Date", "Count") SELECT g, g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day'), g FROM generate_series(1,10) AS g;
+INSERT INTO "WorkerDoor" ("DoorId", "WorkerId", "DateTime") SELECT g, g, (TIMESTAMP '2025-01-01 10:00:00' + g * INTERVAL '1 day') FROM generate_series(1,10) AS g;
+INSERT INTO "WorkerWorkshop" ("WorkerId", "WorkshopId", "WorkShift") SELECT g, g, (g + 1) FROM generate_series(1,10) AS g;
+INSERT INTO "OrderProduct" ("OrderId", "ProductId", "Count") SELECT g, g, g FROM generate_series(1,10) AS g;

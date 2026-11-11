@@ -1,0 +1,82 @@
+CREATE TABLE "City" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(50) NOT NULL,
+    "CoatOfArms" VARCHAR(255)
+);
+
+CREATE TABLE "Country" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(255) NOT NULL,
+    "EnglishTitle" VARCHAR(255) NOT NULL,
+    "Code" VARCHAR(3) NOT NULL,
+    "Code2" INT NOT NULL
+);
+
+CREATE TABLE "Course" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "EventTitle" VARCHAR(100) NOT NULL,
+    "CourseTitle" VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE "Gender" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE "Role" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE "User" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "IdNumber" INT NOT NULL,
+    "Surname" VARCHAR(30) NOT NULL,
+    "Name" VARCHAR(30) NOT NULL,
+    "Patronymic" VARCHAR(30),
+    "Email" VARCHAR(255) NOT NULL,
+    "Birthday" DATE NOT NULL,
+    "Phone" VARCHAR(20) NOT NULL,
+    "Password" VARCHAR(255) NOT NULL,
+    "Photo" VARCHAR(255),
+    "CountryId" INT NOT NULL REFERENCES "Country"("Id") ON DELETE RESTRICT,
+    "GenderId" INT NOT NULL REFERENCES "Gender"("Id") ON DELETE RESTRICT,
+    "CourseId" INT REFERENCES "Course"("Id") ON DELETE SET NULL,
+    "RoleId" INT NOT NULL REFERENCES "Role"("Id") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Event" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(255) NOT NULL,
+    "Date" DATE NOT NULL,
+    "Days" SMALLINT NOT NULL CHECK ("Days" BETWEEN 1 AND 255),
+    "CityId" INT NOT NULL REFERENCES "City"("Id") ON DELETE RESTRICT,
+    "CourseId" INT NOT NULL REFERENCES "Course"("Id") ON DELETE RESTRICT,
+    "WinnerId" INT REFERENCES "User"("Id") ON DELETE SET NULL,
+    "Logo" VARCHAR(255)
+);
+
+CREATE TABLE "Activity" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "Title" VARCHAR(255) NOT NULL,
+    "Time" TIME(0) NOT NULL,
+    "Day" SMALLINT NOT NULL CHECK ("Day" BETWEEN 1 AND 255),
+    "EventId" INT NOT NULL REFERENCES "Event"("Id") ON DELETE CASCADE,
+    "ModeratorId" INT REFERENCES "User"("Id") ON DELETE SET NULL
+);
+
+CREATE TABLE "Mark" (
+    "Id" SERIAL4 PRIMARY KEY,
+    "JuryId" INT NOT NULL REFERENCES "User"("Id") ON DELETE RESTRICT,
+    "ActivityId" INT NOT NULL REFERENCES "Activity"("Id") ON DELETE CASCADE
+);
+
+INSERT INTO "City" ("Title", "CoatOfArms") SELECT ('Title ' || g), ('CoatOfArms ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Country" ("Title", "EnglishTitle", "Code", "Code2") SELECT ('Title ' || g), ('EnglishTitle ' || g), ('C' || LPAD(g::text, 2, '0')), g FROM generate_series(1,10) AS g;
+INSERT INTO "Course" ("EventTitle", "CourseTitle") SELECT ('EventTitle ' || g), ('CourseTitle ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Gender" ("Title") SELECT ('Title ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Role" ("Title") SELECT ('Title ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "User" ("IdNumber", "Surname", "Name", "Patronymic", "Email", "Birthday", "Phone", "Password", "Photo", "CountryId", "GenderId", "CourseId", "RoleId") SELECT g, ('Surname ' || g), ('Name ' || g), ('Patronymic ' || g), ('user' || g || '@example.org'), (DATE '2025-01-01' + g), ('+790000000' || LPAD(g::text, 2, '0')), ('demo_hash_' || g), ('Photo ' || g), g, g, g, g FROM generate_series(1,10) AS g;
+INSERT INTO "Event" ("Title", "Date", "Days", "CityId", "CourseId", "WinnerId", "Logo") SELECT ('Title ' || g), (DATE '2025-01-01' + g), g, g, g, g, ('Logo ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Activity" ("Title", "Time", "Day", "EventId", "ModeratorId") SELECT ('Title ' || g), TIME '10:00:00', g, g, g FROM generate_series(1,10) AS g;
+INSERT INTO "Mark" ("JuryId", "ActivityId") SELECT g, g FROM generate_series(1,10) AS g;

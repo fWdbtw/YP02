@@ -1,0 +1,331 @@
+CREATE TABLE "ClientType" (
+    "ClientTypeId" SERIAL4 PRIMARY KEY,
+    "ClientTypeName" VARCHAR(50) NOT NULL,
+    "Color" VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE "Client" (
+    "ClientId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "Phone" VARCHAR(20) NOT NULL,
+    "Email" VARCHAR(100) NOT NULL,
+    "Photo" VARCHAR(50),
+    "DateOfRegistration" DATE NOT NULL,
+    "ClientTypeId" INT REFERENCES "ClientType"("ClientTypeId") ON DELETE SET NULL
+);
+
+CREATE TABLE "Speciality" (
+    "SpecialityId" SERIAL4 PRIMARY KEY,
+    "SpecialityName" VARCHAR(50) NOT NULL,
+    "SpecialityPay" NUMERIC(12,2) NOT NULL CHECK ("SpecialityPay" >= 0)
+);
+
+CREATE TABLE "Worker" (
+    "WorkerId" SERIAL4 PRIMARY KEY,
+    "LastName" VARCHAR(50) NOT NULL,
+    "FirstName" VARCHAR(50) NOT NULL,
+    "MiddleName" VARCHAR(50),
+    "DateOfBirth" DATE NOT NULL,
+    "Gender" CHAR(1) NOT NULL CHECK ("Gender" IN ('F','M')),
+    "PassportSeries" VARCHAR(10) NOT NULL,
+    "PassportId" VARCHAR(10) NOT NULL,
+    "PassportCode" VARCHAR(10) NOT NULL,
+    "IsActive" BOOLEAN NOT NULL,
+    "PayCoeff" NUMERIC(8,2) NOT NULL CHECK ("PayCoeff" >= 0),
+    "SpecialityId" INT NOT NULL REFERENCES "Speciality"("SpecialityId") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Developer" (
+    "DeveloperId" SERIAL4 PRIMARY KEY,
+    "DeveloperName" VARCHAR(1000) NOT NULL,
+    "WorkBeginDate" DATE NOT NULL
+);
+
+CREATE TABLE "Category" (
+    "CategoryId" SERIAL4 PRIMARY KEY,
+    "CategoryName" VARCHAR(100) NOT NULL,
+    "ParentCategoryId" INT REFERENCES "Category"("CategoryId") ON DELETE SET NULL,
+    CHECK ("ParentCategoryId" IS DISTINCT FROM "CategoryId")
+);
+
+CREATE TABLE "Good" (
+    "GoodId" SERIAL4 PRIMARY KEY,
+    "GoodName" VARCHAR(200) NOT NULL,
+    "MainPhoto" VARCHAR(50) NOT NULL,
+    "SecondPhotos" TEXT,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "Weight" NUMERIC(10,2) CHECK ("Weight" >= 0),
+    "Volume" NUMERIC(10,2) CHECK ("Volume" >= 0),
+    "IsActive" BOOLEAN NOT NULL,
+    "DeveloperId" INT NOT NULL REFERENCES "Developer"("DeveloperId") ON DELETE RESTRICT,
+    "CategoryId" INT REFERENCES "Category"("CategoryId") ON DELETE SET NULL
+);
+
+CREATE TABLE "Sell" (
+    "SellId" SERIAL4 PRIMARY KEY,
+    "GoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE RESTRICT,
+    "Count" INT NOT NULL CHECK ("Count" >= 0),
+    "DateSell" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "Complect" (
+    "ComplectId" SERIAL4 PRIMARY KEY,
+    "MainGoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE CASCADE,
+    "SecondGoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE CASCADE,
+    CHECK ("MainGoodId" <> "SecondGoodId"),
+    UNIQUE ("MainGoodId", "SecondGoodId")
+);
+
+CREATE TABLE "Store" (
+    "StoreId" SERIAL4 PRIMARY KEY,
+    "GoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE CASCADE,
+    "Count" INT NOT NULL CHECK ("Count" >= 0)
+);
+
+CREATE TABLE "Season" (
+    "SeasonId" SERIAL4 PRIMARY KEY,
+    "SeasonName" VARCHAR(50) NOT NULL,
+    "StartDate" DATE NOT NULL,
+    "EndDate" DATE NOT NULL CHECK ("EndDate" >= "StartDate")
+);
+
+CREATE TABLE "SeasonGood" (
+    "SeasonGoodId" SERIAL4 PRIMARY KEY,
+    "SeasonId" INT NOT NULL REFERENCES "Season"("SeasonId") ON DELETE CASCADE,
+    "GoodId" INT NOT NULL REFERENCES "Good"("GoodId") ON DELETE CASCADE,
+    UNIQUE ("SeasonId", "GoodId")
+);
+
+CREATE TABLE "Service" (
+    "ServiceId" SERIAL4 PRIMARY KEY,
+    "ServiceName" VARCHAR(200) NOT NULL,
+    "ServiceDescription" TEXT,
+    "Price" NUMERIC(12,2) NOT NULL CHECK ("Price" >= 0),
+    "TimeLength" INT NOT NULL CHECK ("TimeLength" > 0),
+    "MainPhoto" VARCHAR(100) NOT NULL,
+    "SecondPhotos" TEXT,
+    "Discount" INT NOT NULL CHECK ("Discount" BETWEEN 0 AND 100)
+);
+
+CREATE TABLE "TimeSheet" (
+    "TimeSheetId" SERIAL4 PRIMARY KEY,
+    "WorkerId" INT NOT NULL REFERENCES "Worker"("WorkerId") ON DELETE RESTRICT,
+    "ServiceId" INT NOT NULL REFERENCES "Service"("ServiceId") ON DELETE RESTRICT,
+    "ServiceTime" TIME NOT NULL,
+    "GenderCheck" BOOLEAN NOT NULL
+);
+
+CREATE TABLE "Visit" (
+    "VisitId" SERIAL4 PRIMARY KEY,
+    "ClientId" INT NOT NULL REFERENCES "Client"("ClientId") ON DELETE RESTRICT,
+    "ServiceId" INT NOT NULL REFERENCES "Service"("ServiceId") ON DELETE RESTRICT,
+    "WorkerId" INT NOT NULL REFERENCES "Worker"("WorkerId") ON DELETE RESTRICT,
+    "DateRegs" TIMESTAMP,
+    "DateActual" TIMESTAMP NOT NULL,
+    "Paid" BOOLEAN,
+    "Review" TEXT,
+    "Documents" TEXT
+);
+
+CREATE TABLE "SellVisit" (
+    "SellVisitId" SERIAL4 PRIMARY KEY,
+    "SellId" INT NOT NULL REFERENCES "Sell"("SellId") ON DELETE CASCADE,
+    "VisitId" INT NOT NULL REFERENCES "Visit"("VisitId") ON DELETE CASCADE,
+    UNIQUE ("SellId", "VisitId")
+);
+
+INSERT INTO "ClientType" ("ClientTypeName", "Color") VALUES
+    ('ClientTypeName 1', 'Синий'),
+    ('ClientTypeName 2', 'Синий'),
+    ('ClientTypeName 3', 'Синий'),
+    ('ClientTypeName 4', 'Синий'),
+    ('ClientTypeName 5', 'Синий'),
+    ('ClientTypeName 6', 'Синий'),
+    ('ClientTypeName 7', 'Синий'),
+    ('ClientTypeName 8', 'Синий'),
+    ('ClientTypeName 9', 'Синий'),
+    ('ClientTypeName 10', 'Синий');
+
+INSERT INTO "Client" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "Phone", "Email", "Photo", "DateOfRegistration", "ClientTypeId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '+79000000001', 'user1@example.org', 'photo1.jpg', '2027-01-01', 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '+79000000002', 'user2@example.org', 'photo2.jpg', '2027-02-01', 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '+79000000003', 'user3@example.org', 'photo3.jpg', '2027-03-01', 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '+79000000004', 'user4@example.org', 'photo4.jpg', '2027-04-01', 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '+79000000005', 'user5@example.org', 'photo5.jpg', '2027-05-01', 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '+79000000006', 'user6@example.org', 'photo6.jpg', '2027-06-01', 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '+79000000007', 'user7@example.org', 'photo7.jpg', '2027-07-01', NULL),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '+79000000008', 'user8@example.org', NULL, '2027-08-01', 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '+79000000009', 'user9@example.org', 'photo9.jpg', '2027-09-01', NULL),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '+79000000010', 'user10@example.org', NULL, '2027-10-01', 10);
+
+INSERT INTO "Speciality" ("SpecialityName", "SpecialityPay") VALUES
+    ('SpecialityName 1', 125.00),
+    ('SpecialityName 2', 150.00),
+    ('SpecialityName 3', 175.00),
+    ('SpecialityName 4', 200.00),
+    ('SpecialityName 5', 225.00),
+    ('SpecialityName 6', 250.00),
+    ('SpecialityName 7', 275.00),
+    ('SpecialityName 8', 300.00),
+    ('SpecialityName 9', 325.00),
+    ('SpecialityName 10', 350.00);
+
+INSERT INTO "Worker" ("LastName", "FirstName", "MiddleName", "DateOfBirth", "Gender", "PassportSeries", "PassportId", "PassportCode", "IsActive", "PayCoeff", "SpecialityId") VALUES
+    ('Иванов1', 'Иван1', 'Иванович', '1981-04-12', 'M', '4501', '100001', '770001', TRUE, 1.10, 1),
+    ('Иванов2', 'Иван2', 'Иванович', '1982-04-12', 'F', '4501', '100002', '770001', FALSE, 1.10, 2),
+    ('Иванов3', 'Иван3', 'Иванович', '1983-04-12', 'M', '4501', '100003', '770001', TRUE, 1.10, 3),
+    ('Иванов4', 'Иван4', 'Иванович', '1984-04-12', 'F', '4501', '100004', '770001', FALSE, 1.10, 4),
+    ('Иванов5', 'Иван5', 'Иванович', '1985-04-12', 'M', '4501', '100005', '770001', TRUE, 1.10, 5),
+    ('Иванов6', 'Иван6', 'Иванович', '1986-04-12', 'F', '4501', '100006', '770001', FALSE, 1.10, 6),
+    ('Иванов7', 'Иван7', 'Иванович', '1987-04-12', 'M', '4501', '100007', '770001', TRUE, 1.10, 7),
+    ('Иванов8', 'Иван8', NULL, '1988-04-12', 'F', '4501', '100008', '770001', FALSE, 1.10, 8),
+    ('Иванов9', 'Иван9', 'Иванович', '1989-04-12', 'M', '4501', '100009', '770001', TRUE, 1.10, 9),
+    ('Иванов10', 'Иван10', NULL, '1990-04-12', 'F', '4501', '100010', '770001', FALSE, 1.10, 10);
+
+INSERT INTO "Developer" ("DeveloperName", "WorkBeginDate") VALUES
+    ('DeveloperName 1', '2027-01-01'),
+    ('DeveloperName 2', '2027-02-01'),
+    ('DeveloperName 3', '2027-03-01'),
+    ('DeveloperName 4', '2027-04-01'),
+    ('DeveloperName 5', '2027-05-01'),
+    ('DeveloperName 6', '2027-06-01'),
+    ('DeveloperName 7', '2027-07-01'),
+    ('DeveloperName 8', '2027-08-01'),
+    ('DeveloperName 9', '2027-09-01'),
+    ('DeveloperName 10', '2027-10-01');
+
+INSERT INTO "Category" ("CategoryName", "ParentCategoryId") VALUES
+    ('CategoryName 1', NULL),
+    ('CategoryName 2', 1),
+    ('CategoryName 3', 1),
+    ('CategoryName 4', 1),
+    ('CategoryName 5', 2),
+    ('CategoryName 6', 2),
+    ('CategoryName 7', NULL),
+    ('CategoryName 8', 3),
+    ('CategoryName 9', NULL),
+    ('CategoryName 10', 3);
+
+INSERT INTO "Good" ("GoodName", "MainPhoto", "SecondPhotos", "Price", "Weight", "Volume", "IsActive", "DeveloperId", "CategoryId") VALUES
+    ('GoodName 1', 'photo1.jpg', 'photo1.jpg', 125.00, 2.50, 2.50, TRUE, 1, 1),
+    ('GoodName 2', 'photo2.jpg', 'photo2.jpg', 150.00, 4.50, 4.50, FALSE, 2, 2),
+    ('GoodName 3', 'photo3.jpg', 'photo3.jpg', 175.00, 6.50, 6.50, TRUE, 3, 3),
+    ('GoodName 4', 'photo4.jpg', 'photo4.jpg', 200.00, 8.50, 8.50, FALSE, 4, 4),
+    ('GoodName 5', 'photo5.jpg', 'photo5.jpg', 225.00, 10.50, 10.50, TRUE, 5, 5),
+    ('GoodName 6', 'photo6.jpg', 'photo6.jpg', 250.00, 12.50, 12.50, FALSE, 6, 6),
+    ('GoodName 7', 'photo7.jpg', 'photo7.jpg', 275.00, 14.50, 14.50, TRUE, 7, NULL),
+    ('GoodName 8', 'photo8.jpg', NULL, 300.00, NULL, NULL, FALSE, 8, 8),
+    ('GoodName 9', 'photo9.jpg', 'photo9.jpg', 325.00, 18.50, 18.50, TRUE, 9, NULL),
+    ('GoodName 10', 'photo10.jpg', NULL, 350.00, NULL, NULL, FALSE, 10, 10);
+
+INSERT INTO "Sell" ("GoodId", "Count", "DateSell") VALUES
+    (1, 2, '2027-01-12 10:30:00'),
+    (2, 4, '2027-02-12 10:30:00'),
+    (3, 6, '2027-03-12 10:30:00'),
+    (4, 8, '2027-04-12 10:30:00'),
+    (5, 10, '2027-05-12 10:30:00'),
+    (6, 12, '2027-06-12 10:30:00'),
+    (7, 14, '2027-07-12 10:30:00'),
+    (8, 16, '2027-08-12 10:30:00'),
+    (9, 18, '2027-09-12 10:30:00'),
+    (10, 20, '2027-10-12 10:30:00');
+
+INSERT INTO "Complect" ("MainGoodId", "SecondGoodId") VALUES
+    (1, 2),
+    (2, 3),
+    (3, 4),
+    (4, 5),
+    (5, 6),
+    (6, 7),
+    (7, 8),
+    (8, 9),
+    (9, 10),
+    (10, 1);
+
+INSERT INTO "Store" ("GoodId", "Count") VALUES
+    (1, 2),
+    (2, 4),
+    (3, 6),
+    (4, 8),
+    (5, 10),
+    (6, 12),
+    (7, 14),
+    (8, 16),
+    (9, 18),
+    (10, 20);
+
+INSERT INTO "Season" ("SeasonName", "StartDate", "EndDate") VALUES
+    ('Сезон 1', '2027-01-01', '2027-01-28'),
+    ('Сезон 2', '2027-02-01', '2027-02-28'),
+    ('Сезон 3', '2027-03-01', '2027-03-28'),
+    ('Сезон 4', '2027-04-01', '2027-04-28'),
+    ('Сезон 5', '2027-05-01', '2027-05-28'),
+    ('Сезон 6', '2027-06-01', '2027-06-28'),
+    ('Сезон 7', '2027-07-01', '2027-07-28'),
+    ('Сезон 8', '2027-08-01', '2027-08-28'),
+    ('Сезон 9', '2027-09-01', '2027-09-28'),
+    ('Сезон 10', '2027-10-01', '2027-10-28');
+
+INSERT INTO "SeasonGood" ("SeasonId", "GoodId") VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (5, 5),
+    (6, 6),
+    (7, 7),
+    (8, 8),
+    (9, 9),
+    (10, 10);
+
+INSERT INTO "Service" ("ServiceName", "ServiceDescription", "Price", "TimeLength", "MainPhoto", "SecondPhotos", "Discount") VALUES
+    ('ServiceName 1', 'Описание услуги 1', 125.00, 2, 'photo1.jpg', 'photo1.jpg', 1),
+    ('ServiceName 2', 'Описание услуги 2', 150.00, 4, 'photo2.jpg', 'photo2.jpg', 2),
+    ('ServiceName 3', 'Описание услуги 3', 175.00, 6, 'photo3.jpg', 'photo3.jpg', 3),
+    ('ServiceName 4', 'Описание услуги 4', 200.00, 8, 'photo4.jpg', 'photo4.jpg', 4),
+    ('ServiceName 5', 'Описание услуги 5', 225.00, 10, 'photo5.jpg', 'photo5.jpg', 5),
+    ('ServiceName 6', 'Описание услуги 6', 250.00, 12, 'photo6.jpg', 'photo6.jpg', 6),
+    ('ServiceName 7', 'Описание услуги 7', 275.00, 14, 'photo7.jpg', 'photo7.jpg', 7),
+    ('ServiceName 8', NULL, 300.00, 16, 'photo8.jpg', NULL, 8),
+    ('ServiceName 9', 'Описание услуги 9', 325.00, 18, 'photo9.jpg', 'photo9.jpg', 9),
+    ('ServiceName 10', NULL, 350.00, 20, 'photo10.jpg', NULL, 10);
+
+INSERT INTO "TimeSheet" ("WorkerId", "ServiceId", "ServiceTime", "GenderCheck") VALUES
+    (1, 1, '09:00:00', TRUE),
+    (2, 2, '10:00:00', FALSE),
+    (3, 3, '11:00:00', TRUE),
+    (4, 4, '12:00:00', FALSE),
+    (5, 5, '13:00:00', TRUE),
+    (6, 6, '14:00:00', FALSE),
+    (7, 7, '15:00:00', TRUE),
+    (8, 8, '16:00:00', FALSE),
+    (9, 9, '17:00:00', TRUE),
+    (10, 10, '18:00:00', FALSE);
+
+INSERT INTO "Visit" ("ClientId", "ServiceId", "WorkerId", "DateRegs", "DateActual", "Paid", "Review", "Documents") VALUES
+    (1, 1, 1, '2027-01-12 10:30:00', '2027-01-12 10:30:00', TRUE, 'Отзыв 1', 'document1.pdf'),
+    (2, 2, 2, '2027-02-12 10:30:00', '2027-02-12 10:30:00', FALSE, 'Отзыв 2', 'document2.pdf'),
+    (3, 3, 3, '2027-03-12 10:30:00', '2027-03-12 10:30:00', TRUE, 'Отзыв 3', 'document3.pdf'),
+    (4, 4, 4, '2027-04-12 10:30:00', '2027-04-12 10:30:00', FALSE, 'Отзыв 4', 'document4.pdf'),
+    (5, 5, 5, '2027-05-12 10:30:00', '2027-05-12 10:30:00', TRUE, 'Отзыв 5', 'document5.pdf'),
+    (6, 6, 6, '2027-06-12 10:30:00', '2027-06-12 10:30:00', FALSE, 'Отзыв 6', 'document6.pdf'),
+    (7, 7, 7, '2027-07-12 10:30:00', '2027-07-12 10:30:00', TRUE, 'Отзыв 7', 'document7.pdf'),
+    (8, 8, 8, NULL, '2027-08-12 10:30:00', NULL, NULL, NULL),
+    (9, 9, 9, '2027-09-12 10:30:00', '2027-09-12 10:30:00', TRUE, 'Отзыв 9', 'document9.pdf'),
+    (10, 10, 10, NULL, '2027-10-12 10:30:00', NULL, NULL, NULL);
+
+INSERT INTO "SellVisit" ("SellId", "VisitId") VALUES
+    (1, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (5, 5),
+    (6, 6),
+    (7, 7),
+    (8, 8),
+    (9, 9),
+    (10, 10);

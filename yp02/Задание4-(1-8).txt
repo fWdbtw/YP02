@@ -1,0 +1,113 @@
+-- Задание 4. PostgreSQL 14+. Схема z4.
+-- 11 таблиц, по 10 демонстрационных записей.
+-- Внешние ключи в короткой записи CREATE TABLE.
+-- UserID в Order исправлен с VARCHAR(100) на INT (соответствие User.UserID).
+BEGIN;
+CREATE SCHEMA IF NOT EXISTS z4;
+SET search_path TO z4;
+
+CREATE TABLE "OrderStatus" (
+    "OrderStatusID" SERIAL4 PRIMARY KEY,
+    "OrderStatusName" VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE "PickupPoint" (
+    "PickupPointID" SERIAL4 PRIMARY KEY,
+    "Address" TEXT NOT NULL
+);
+
+CREATE TABLE "ProductCategory" (
+    "ProductCategoryID" SERIAL4 PRIMARY KEY,
+    "ProductCategoryName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "ProductManufacturer" (
+    "ProductManufacturerID" SERIAL4 PRIMARY KEY,
+    "ProductManufacturerName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "ProductSupplier" (
+    "ProductSupplierID" SERIAL4 PRIMARY KEY,
+    "ProductSupplierName" VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE "Role" (
+    "RoleID" SERIAL4 PRIMARY KEY,
+    "RoleName" VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE "UnitType" (
+    "UnitTypeID" SERIAL4 PRIMARY KEY,
+    "UnitTypeName" VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE "Product" (
+    "ProductID" SERIAL4 PRIMARY KEY,
+    "ProductArticleNumber" VARCHAR(100) NOT NULL,
+    "ProductName" VARCHAR(200) NOT NULL,
+    "UnitTypeID" INT NOT NULL REFERENCES "UnitType"("UnitTypeID") ON DELETE RESTRICT,
+    "ProductCost" NUMERIC(19,4) NOT NULL CHECK ("ProductCost" >= 0),
+    "ProductMaxDiscountAmount" SMALLINT CHECK ("ProductMaxDiscountAmount" BETWEEN 0 AND 100),
+    "ProductManufacturerID" INT NOT NULL REFERENCES "ProductManufacturer"("ProductManufacturerID") ON DELETE RESTRICT,
+    "ProductSupplierID" INT NOT NULL REFERENCES "ProductSupplier"("ProductSupplierID") ON DELETE RESTRICT,
+    "ProductCategoryID" INT NOT NULL REFERENCES "ProductCategory"("ProductCategoryID") ON DELETE RESTRICT,
+    "ProductDiscountAmount" SMALLINT CHECK ("ProductDiscountAmount" BETWEEN 0 AND 100),
+    "ProductQuantityInStock" INT NOT NULL CHECK ("ProductQuantityInStock" >= 0),
+    "ProductDescription" TEXT NOT NULL,
+    "ProductPhoto" VARCHAR(100)
+);
+
+CREATE TABLE "User" (
+    "UserID" SERIAL4 PRIMARY KEY,
+    "UserLogin" VARCHAR(100) NOT NULL,
+    "UserPassword" VARCHAR(255) NOT NULL,
+    "UserSurname" VARCHAR(100) NOT NULL,
+    "UserName" VARCHAR(100) NOT NULL,
+    "UserPatronymic" VARCHAR(1000) NOT NULL,
+    "RoleID" INT NOT NULL REFERENCES "Role"("RoleID") ON DELETE RESTRICT
+);
+
+CREATE TABLE "Order" (
+    "OrderID" SERIAL4 PRIMARY KEY,
+    "OrderCreateDate" TIMESTAMP NOT NULL,
+    "OrderDeliveryDate" TIMESTAMP NOT NULL,
+    "UserID" INT REFERENCES "User"("UserID") ON DELETE SET NULL,
+    "PickupPointID" INT NOT NULL REFERENCES "PickupPoint"("PickupPointID") ON DELETE RESTRICT,
+    "OrderStatusID" INT NOT NULL REFERENCES "OrderStatus"("OrderStatusID") ON DELETE RESTRICT,
+    "OrderGetCode" INT NOT NULL,
+    CONSTRAINT "CK_Order_DeliveryDate" CHECK ("OrderDeliveryDate" >= "OrderCreateDate")
+);
+
+CREATE TABLE "OrderProduct" (
+    "OrderProductID" SERIAL4 PRIMARY KEY,
+    "OrderID" INT NOT NULL REFERENCES "Order"("OrderID") ON DELETE CASCADE,
+    "ProductID" INT NOT NULL REFERENCES "Product"("ProductID") ON DELETE RESTRICT,
+    "Count" INT NOT NULL CHECK ("Count" > 0)
+);
+
+INSERT INTO "OrderStatus" ("OrderStatusName") SELECT ('OrderStatusName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "PickupPoint" ("Address") SELECT ('Address ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "ProductCategory" ("ProductCategoryName") SELECT ('ProductCategoryName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "ProductManufacturer" ("ProductManufacturerName") SELECT ('ProductManufacturerName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "ProductSupplier" ("ProductSupplierName") SELECT ('ProductSupplierName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Role" ("RoleName") SELECT ('RoleName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "UnitType" ("UnitTypeName") SELECT ('UnitTypeName ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "Product" ("ProductArticleNumber", "ProductName", "UnitTypeID", "ProductCost", "ProductMaxDiscountAmount", "ProductManufacturerID", "ProductSupplierID", "ProductCategoryID", "ProductDiscountAmount", "ProductQuantityInStock", "ProductDescription", "ProductPhoto") SELECT ('ProductArticleNumber ' || g), ('ProductName ' || g), g, (g * 125.50)::NUMERIC(19,4), g, g, g, g, g, g * 10, ('ProductDescription ' || g), ('ProductPhoto ' || g) FROM generate_series(1,10) AS g;
+INSERT INTO "User" ("UserLogin", "UserPassword", "UserSurname", "UserName", "UserPatronymic", "RoleID") SELECT ('user' || g), ('demo_hash_' || g), ('UserSurname ' || g), ('UserName ' || g), ('UserPatronymic ' || g), g FROM generate_series(1,10) AS g;
+INSERT INTO "Order" ("OrderCreateDate", "OrderDeliveryDate", "UserID", "PickupPointID", "OrderStatusID", "OrderGetCode") SELECT (TIMESTAMP '2026-01-01 10:00:00' + g * INTERVAL '1 day'), (TIMESTAMP '2026-01-03 10:00:00' + g * INTERVAL '1 day'), g, g, g, 1000 + g FROM generate_series(1,10) AS g;
+INSERT INTO "OrderProduct" ("OrderID", "ProductID", "Count") SELECT g, g, g FROM generate_series(1,10) AS g;
+
+COMMIT;
+
+-- Проверка количества записей по таблицам:
+SELECT COUNT(*) AS "OrderStatus_rows" FROM z4."OrderStatus";
+SELECT COUNT(*) AS "PickupPoint_rows" FROM z4."PickupPoint";
+SELECT COUNT(*) AS "ProductCategory_rows" FROM z4."ProductCategory";
+SELECT COUNT(*) AS "ProductManufacturer_rows" FROM z4."ProductManufacturer";
+SELECT COUNT(*) AS "ProductSupplier_rows" FROM z4."ProductSupplier";
+SELECT COUNT(*) AS "Role_rows" FROM z4."Role";
+SELECT COUNT(*) AS "UnitType_rows" FROM z4."UnitType";
+SELECT COUNT(*) AS "Product_rows" FROM z4."Product";
+SELECT COUNT(*) AS "User_rows" FROM z4."User";
+SELECT COUNT(*) AS "Order_rows" FROM z4."Order";
+SELECT COUNT(*) AS "OrderProduct_rows" FROM z4."OrderProduct";
